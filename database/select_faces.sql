@@ -1,0 +1,1 @@
+SELECT id, name, base64_string, embedding FROM face_embeddings

@@ -10,8 +10,9 @@ DATA_DIR = BASE_DIR / "data"
 FACES_PATH = DATA_DIR / "faces"
 
 # Đường dẫn database
-DB_PATH = BASE_DIR / "database" / "face_recognition.db"
+DB_PATH = BASE_DIR / "database" / "embedding_repository.db"
 SCHEMA_PATH = BASE_DIR / "database" / "schema.sql"
+DB_DIR = BASE_DIR / "database"
 
 # Đường dẫn model ArcFace (ONNX)
 ARCFACE_MODEL_PATH = BASE_DIR / "data" / "models" / "w600k_r50.onnx"
@@ -28,6 +29,8 @@ REFERENCE_LANDMARKS = [
 # Input det
 INPUT_SIZE_DET = (640, 640)
 
-
 # Ngưỡng nhận diện (cosine similarity)
 RECOGNITION_THRESHOLD = 0.5
+
+# Input shape for ArcFace
+IMAGE_SHAPE = (112,112)

@@ -1,3 +1,5 @@
 venv/
 __pycache__/
-data/faces
+data/
+database/embedding_repository.db
+**/__init__.py

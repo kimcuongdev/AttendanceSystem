@@ -1,6 +1,7 @@
 # face_detector.py
 import cv2
 import mediapipe as mp
+from config import IMAGE_SHAPE
 
 class FaceDetector:
     def __init__(self, min_detection_confidence=0.5, model_selection=0):
@@ -62,26 +63,6 @@ class FaceDetector:
                 #     cv2.circle(image, pt, 3, (0,0,255), -1)
         return image
 
-    def crop_face(self,image, bbox):
-        """
-        Input: image, bbox: [xmin, ymin, width, height] (normalized)
-        Output: face crop from bbox
-        """
-        h, w, _ = image.shape
-        xmin = int(bbox.xmin * w)
-        ymin = int(bbox.ymin * h)
-        box_w = int(bbox.width * w)
-        box_h = int(bbox.height * h)
-
-        # Cắt mặt (chú ý giới hạn ảnh)
-        x1 = max(0, xmin)
-        y1 = max(0, ymin)
-        x2 = min(w, xmin + box_w)
-        y2 = min(h, ymin + box_h)
-
-        face_crop = image[y1:y2, x1:x2]
-        return face_crop
-
 
 # test
 if __name__ == "__main__":
@@ -90,30 +71,47 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(0)  # webcam
     detector = FaceDetector(min_detection_confidence=0.7)
 
+    # detected = False
+
     while True:
+        # if detected:
+        #     break
         ret, frame = cap.read()
         if not ret:
             break
 
         detection_results = detector.detect_faces(frame) # results
-        
+        if not detection_results:
+            print('Faces not found')
+            break
         # detection_drawing = detector.draw_faces(frame, detection_results)
 
         # cv2.imshow("Face Detection", cv2.flip(detection_drawing,1))
 
         # view cropped faces, aligned_faces
+        # for detection in detection_results.detections:
+        #     bbox = detection.location_data.relative_bounding_box  # get bbox
+        #     face_cropped = preprocessor.crop_face(frame, bbox)
+
+        #     keypoints = detection.location_data.relative_keypoints
+        #     left_eye  = (keypoints[0].x, keypoints[0].y)
+        #     right_eye = (keypoints[1].x, keypoints[1].y)
+        #     nose_tip = (keypoints[2].x, keypoints[2].y)
+
+        #     aligned_face = preprocessor.align_face_3point(face_cropped, left_eye, right_eye, nose_tip)
+
+        #     cv2.imshow("Face Detection", cv2.flip(aligned_face,1))
+
+        # view crop + resize face:
         for detection in detection_results.detections:
             bbox = detection.location_data.relative_bounding_box
-            face_cropped = detector.crop_face(frame, bbox)
-
-            keypoints = detection.location_data.relative_keypoints
-            left_eye  = (keypoints[0].x, keypoints[0].y)
-            right_eye = (keypoints[1].x, keypoints[1].y)
-            nose_tip = (keypoints[2].x, keypoints[2].y)
-
-            aligned_face = preprocessor.align_face_3point(face_cropped, left_eye, right_eye, nose_tip)
-
-            cv2.imshow("Face Detection", cv2.flip(aligned_face,1))
+            face_cropped = preprocessor.crop_face(frame, bbox)
+            face_resized = preprocessor.resize_face(face_cropped)
+            cv2.imshow("Cropped Face: ", cv2.flip(face_cropped,1))
+            cv2.imshow("ArcFace Input: ", cv2.flip(face_resized,1))
+            # cv2.imwrite('output.jpg',face_resized)
+            # detected = True
+            # break
 
         if cv2.waitKey(1) & 0xFF == 27:  # ESC để thoát
             break

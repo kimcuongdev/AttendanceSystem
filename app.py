@@ -1,43 +1,44 @@
 import cv2
-import sys
 from face_detection.face_detector import FaceDetector
 from face_detection.preprocessor import Preprocessor
+from face_embedding.extractor import Extractor
+from face_recognition.retriver import Retriever
+from face_recognition.recognizer import Recognizer
+from face_recognition.similarity import Cosine_Similarity
+from ui.drawer import Drawer
 
 def main():
-    # Load ảnh gốc
-    image = cv2.imread('05022025.jpg')
-    if image is None:
-        print(f"Không thể load ảnh:")
-        return
+    cap = cv2.VideoCapture(0)
+    detector = FaceDetector(min_detection_confidence= 0.7)
+    extractor = Extractor()
+    retriever = Retriever()
+    similarity = Cosine_Similarity()
+    recognizer = Recognizer(similarity)
+    all_faces = retriever.retrieve(image= True)
+    drawer = Drawer()
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print('Camera Error')
+            break
+        detection_results = detector.detect_faces(frame)
+        detection_drawing = detector.draw_faces(frame, detection_results)
+        # cv2.imshow("Face Detection", cv2.flip(detection_drawing, 1))
+        if not detection_results:
+            print('Face not found')
+            break
+        for detection in detection_results.detections:
+            vector_embedding = extractor.extract(frame, detection)
+            best_score, best_item = recognizer.recognize(vector_embedding, all_faces)
+            # cv2.imshow("Best Similarity", cv2.flip(best_item['image'], 1))
+            print(f"Name: {best_item['name']}, Score: {best_score}")
+            result = drawer.draw_item(frame, best_item, detection, best_score)
+            cv2.imshow("App", result)
 
-    # Khởi tạo detector + preprocessor
-    detector = FaceDetector()
-    preprocessor = Preprocessor(image_size=(112, 112))
+        if cv2.waitKey(1) & 0xFF == 27:
+            break
 
-    # Detect mặt
-    faces = detector.detect_faces(image)
-
-    if not faces:
-        print("Không phát hiện khuôn mặt nào.")
-        return
-
-    for idx, face in enumerate(faces):
-        landmarks = face['landmarks']
-        bbox = face['bbox']
-        # Align khuôn mặt đầu tiên
-        aligned = preprocessor.align_face(image, landmarks)
-
-        # Vẽ bbox + landmarks trên ảnh gốc
-        (x1, y1, x2, y2) = bbox
-        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        for (lx, ly) in landmarks:
-            cv2.circle(image, (int(lx), int(ly)), 2, (0, 0, 255), -1)
-
-        # Show kết quả
-        cv2.imshow("Original with detection", image)
-        cv2.imshow(f"Aligned Face {idx+1}", aligned)
-        cv2.waitKey(0)
-
+    cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
